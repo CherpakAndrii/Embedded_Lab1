@@ -1,16 +1,60 @@
 from csv import reader
 from datetime import datetime
+from typing import TextIO
+
 from domain.aggregated_data import AggregatedData
+import config
+from domain.accelerometer import Accelerometer
+from domain.gps import Gps
+
 
 class FileDatasource:
+    accelerometer_file: TextIO
+    gps_file: TextIO
+
+    accelerometer_filename: str
+    gps_filename: str
+
     def __init__(self, accelerometer_filename: str, gps_filename: str) -> None:
-        pass
+        self.accelerometer_filename = accelerometer_filename
+        self.gps_filename = gps_filename
 
     def read(self) -> AggregatedData:
         """Метод повертає дані отримані з датчиків"""
+        self.accelerometer_file, acc_data = FileDatasource.__get_next_line(self.accelerometer_file, int)
+        self.gps_file, gps_data = FileDatasource.__get_next_line(self.gps_file, float)
+
+        return AggregatedData(
+            Accelerometer(acc_data[0], acc_data[1], acc_data[2]),
+            Gps(gps_data[0], gps_data[1]),
+            datetime.now(),
+            config.USER_ID,
+        )
 
     def startReading(self, *args, **kwargs):
         """Метод повинен викликатись перед початком читання даних"""
+        self.accelerometer_file = open(self.accelerometer_filename, 'r')
+        self.gps_file = open(self.gps_filename, 'r')
+
+        # skip header
+        self.accelerometer_file.readline()
+        self.gps_file.readline()
 
     def stopReading(self, *args, **kwargs):
         """Метод повинен викликатись для закінчення читання даних"""
+        self.accelerometer_file.close()
+        self.gps_file.close()
+
+    @staticmethod
+    def __get_next_line(file: TextIO, datatype: type) -> tuple[TextIO, list[float|int]]:
+        line = file.readline()
+        if not line or len(line) == 0:
+            fl_name = file.name
+            file.close()
+            file = open(fl_name, 'r')
+
+            # skip header
+            file.readline()
+            line = file.readline()
+
+        return file, [datatype(num) for num in line.split(',')]

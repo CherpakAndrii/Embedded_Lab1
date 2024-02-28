@@ -60,3 +60,12 @@ def delete_processed_agent_data(processed_agent_data_id: int):
     session.delete(obj)
     session.commit()
     return obj
+
+
+@processed_agent_data_router.delete("/")
+def clear_all_data():
+    data = session.query(ProcessedAgentDataInDB)
+    lines_count = data.count()
+    data.delete()
+    session.commit()
+    return {"lines_deleted": lines_count}

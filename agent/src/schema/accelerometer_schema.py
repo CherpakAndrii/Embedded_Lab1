@@ -1,5 +1,5 @@
 from marshmallow import Schema, fields
-from src.domain.accelerometer import Accelerometer
+from domain.accelerometer import Accelerometer
 
 
 class AccelerometerSchema(Schema):
